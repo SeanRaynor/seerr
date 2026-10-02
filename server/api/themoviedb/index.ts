@@ -714,9 +714,19 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      // TMDB returns a 500 for `release_date.desc` when the query only
+      // has an upper primary release date bound. Since this filter is sent as
+      // `primary_release_date.lte`, use the matching sort field for that case.
+      const safeSortBy =
+        sortBy === 'release_date.desc' &&
+        primaryReleaseDateLte &&
+        !primaryReleaseDateGte
+          ? 'primary_release_date.desc'
+          : sortBy;
+
       const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
         params: {
-          sort_by: sortBy,
+          sort_by: safeSortBy,
           page,
           include_adult: includeAdult,
           include_video: includeVideo,
